@@ -1,0 +1,6 @@
+{
+  "parent": "cratbat:item/handheld_cratbat",
+  "textures": {
+    "layer0": "cratbat:item/cratbat"
+  }
+}
