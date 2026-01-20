@@ -4,9 +4,11 @@ import com.mojang.logging.LogUtils;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.constants.RecipeTypes;
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
+import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -15,9 +17,12 @@ import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import org.slf4j.Logger;
+import xyz.nineworlds.cratbat.CratBatConfig;
 import xyz.nineworlds.cratbat.CratBatMod;
 import xyz.nineworlds.cratbat.item.CrankSkullItem;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +31,52 @@ import java.util.Map;
 public class CratBatJEIPlugin implements IModPlugin {
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    private static IJeiRuntime jeiRuntime;
+    private static boolean testCratHidden = false;
+
     @Override
     public ResourceLocation getPluginUid() {
         return ResourceLocation.fromNamespaceAndPath(CratBatMod.MODID, "jei_plugin");
+    }
+
+    @Override
+    public void onRuntimeAvailable(IJeiRuntime runtime) {
+        jeiRuntime = runtime;
+        LOGGER.info("JEI runtime available, updating TestCrat visibility");
+        updateTestCratVisibility();
+    }
+
+    @Override
+    public void onRuntimeUnavailable() {
+        jeiRuntime = null;
+        testCratHidden = false;
+        LOGGER.info("JEI runtime unavailable");
+    }
+
+    /**
+     * Updates the visibility of the TestCrat spawner in JEI based on current config.
+     * Call this when server config is received or cleared.
+     */
+    public static void updateTestCratVisibility() {
+        if (jeiRuntime == null) {
+            return;
+        }
+
+        boolean shouldBeHidden = !CratBatConfig.isTestCratEnabled();
+
+        if (shouldBeHidden && !testCratHidden) {
+            // Hide the item
+            Collection<ItemStack> toHide = Collections.singleton(new ItemStack(CratBatMod.TEST_CRAT_SPAWNER.get()));
+            jeiRuntime.getIngredientManager().removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, toHide);
+            testCratHidden = true;
+            LOGGER.info("Hidden TestCrat spawner from JEI");
+        } else if (!shouldBeHidden && testCratHidden) {
+            // Show the item
+            Collection<ItemStack> toShow = Collections.singleton(new ItemStack(CratBatMod.TEST_CRAT_SPAWNER.get()));
+            jeiRuntime.getIngredientManager().addIngredientsAtRuntime(VanillaTypes.ITEM_STACK, toShow);
+            testCratHidden = false;
+            LOGGER.info("Shown TestCrat spawner in JEI");
+        }
     }
 
     @Override

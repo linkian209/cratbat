@@ -3,6 +3,10 @@
   "item.cratbat.cratbat_shield": "CratBat Shield",
   "item.cratbat.bat_wing": "Bat Wing",
   "item.cratbat.crankcrank_doll": "CrankCrank Doll",
+  "item.cratbat.testcrat_spawner": "TestCrat Spawner",
+  "entity.cratbat.testcrat": "TestCrat",
   "itemGroup.cratbat.cratbat_tab": "CratBat",
-  "curios.identifier.cratbat_shield": "CratBat Shield"
+  "curios.identifier.cratbat_shield": "CratBat Shield",
+  "death.attack.crat_bat_strike": "%1$s was swatted out of the sky",
+  "death.attack.crat_bat_strike.player": "%1$s was swatted out of the sky by %2$s"
 }

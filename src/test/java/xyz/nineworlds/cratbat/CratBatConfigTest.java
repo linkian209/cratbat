@@ -76,7 +76,7 @@ class CratBatConfigTest {
 
         @BeforeEach
         void applyServerConfig() {
-            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE);
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE, false);
         }
 
         @Test
@@ -111,7 +111,7 @@ class CratBatConfigTest {
         @Test
         @DisplayName("applyServerConfig overrides all three values")
         void applyServerConfig_overridesAllValues() {
-            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE);
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE, false);
 
             assertEquals(SERVER_NAME, CratBatConfig.getTargetPlayerName());
             assertEquals(SERVER_UUID, CratBatConfig.getTargetPlayerUUID());
@@ -123,7 +123,7 @@ class CratBatConfigTest {
         void applyServerConfig_setsHasServerConfigTrue() {
             assertFalse(CratBatConfig.hasServerConfig());
 
-            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE);
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE, false);
 
             assertTrue(CratBatConfig.hasServerConfig());
         }
@@ -131,7 +131,7 @@ class CratBatConfigTest {
         @Test
         @DisplayName("applyServerConfig does not modify local config values")
         void applyServerConfig_doesNotModifyLocalValues() {
-            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE);
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE, false);
 
             // Local values should remain unchanged
             assertEquals(LOCAL_NAME, CratBatConfig.targetPlayerName);
@@ -142,10 +142,10 @@ class CratBatConfigTest {
         @Test
         @DisplayName("applyServerConfig can be called multiple times")
         void applyServerConfig_canBeCalledMultipleTimes() {
-            CratBatConfig.applyServerConfig("First", "first-uuid", "first-texture");
+            CratBatConfig.applyServerConfig("First", "first-uuid", "first-texture", false);
             assertEquals("First", CratBatConfig.getTargetPlayerName());
 
-            CratBatConfig.applyServerConfig("Second", "second-uuid", "second-texture");
+            CratBatConfig.applyServerConfig("Second", "second-uuid", "second-texture", true);
             assertEquals("Second", CratBatConfig.getTargetPlayerName());
         }
     }
@@ -157,7 +157,7 @@ class CratBatConfigTest {
         @Test
         @DisplayName("clearServerConfig reverts to local values")
         void clearServerConfig_revertsToLocalValues() {
-            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE);
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE, false);
             assertEquals(SERVER_NAME, CratBatConfig.getTargetPlayerName());
 
             CratBatConfig.clearServerConfig();
@@ -170,7 +170,7 @@ class CratBatConfigTest {
         @Test
         @DisplayName("clearServerConfig sets hasServerConfig to false")
         void clearServerConfig_setsHasServerConfigFalse() {
-            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE);
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE, false);
             assertTrue(CratBatConfig.hasServerConfig());
 
             CratBatConfig.clearServerConfig();
@@ -198,7 +198,7 @@ class CratBatConfigTest {
         @Test
         @DisplayName("Empty texture URL is handled correctly")
         void emptyTextureUrl_handledCorrectly() {
-            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, "");
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, "", false);
 
             assertEquals("", CratBatConfig.getTargetPlayerTexture());
         }
@@ -219,10 +219,42 @@ class CratBatConfigTest {
         @Test
         @DisplayName("Server config with empty name still overrides")
         void serverConfigWithEmptyName_stillOverrides() {
-            CratBatConfig.applyServerConfig("", SERVER_UUID, SERVER_TEXTURE);
+            CratBatConfig.applyServerConfig("", SERVER_UUID, SERVER_TEXTURE, false);
 
             assertTrue(CratBatConfig.hasServerConfig());
             assertEquals("", CratBatConfig.getTargetPlayerName());
+        }
+
+        @Test
+        @DisplayName("Server config enableTestCrat true overrides local false")
+        void serverConfigEnableTestCrat_overridesLocal() {
+            CratBatConfig.enableTestCrat = false;
+
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE, true);
+
+            assertTrue(CratBatConfig.isTestCratEnabled());
+        }
+
+        @Test
+        @DisplayName("Server config enableTestCrat false overrides local true")
+        void serverConfigEnableTestCratFalse_overridesLocalTrue() {
+            CratBatConfig.enableTestCrat = true;
+
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE, false);
+
+            assertFalse(CratBatConfig.isTestCratEnabled());
+        }
+
+        @Test
+        @DisplayName("clearServerConfig reverts enableTestCrat to local value")
+        void clearServerConfig_revertsEnableTestCrat() {
+            CratBatConfig.enableTestCrat = true;
+            CratBatConfig.applyServerConfig(SERVER_NAME, SERVER_UUID, SERVER_TEXTURE, false);
+            assertFalse(CratBatConfig.isTestCratEnabled());
+
+            CratBatConfig.clearServerConfig();
+
+            assertTrue(CratBatConfig.isTestCratEnabled());
         }
     }
 }

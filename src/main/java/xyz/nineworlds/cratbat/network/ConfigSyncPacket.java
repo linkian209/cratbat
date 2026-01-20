@@ -19,6 +19,7 @@ public class ConfigSyncPacket {
     private final String targetPlayerName;
     private final String targetPlayerUUID;
     private final String targetPlayerTexture;
+    private final boolean enableTestCrat;
 
     /**
      * Creates a new ConfigSyncPacket with the specified values.
@@ -26,11 +27,13 @@ public class ConfigSyncPacket {
      * @param targetPlayerName    The name of the target player
      * @param targetPlayerUUID    The UUID of the target player
      * @param targetPlayerTexture The texture URL for the target player's skin
+     * @param enableTestCrat      Whether the TestCrat entity is enabled
      */
-    public ConfigSyncPacket(String targetPlayerName, String targetPlayerUUID, String targetPlayerTexture) {
+    public ConfigSyncPacket(String targetPlayerName, String targetPlayerUUID, String targetPlayerTexture, boolean enableTestCrat) {
         this.targetPlayerName = targetPlayerName != null ? targetPlayerName : "";
         this.targetPlayerUUID = targetPlayerUUID != null ? targetPlayerUUID : "";
         this.targetPlayerTexture = targetPlayerTexture != null ? targetPlayerTexture : "";
+        this.enableTestCrat = enableTestCrat;
     }
 
     /**
@@ -42,7 +45,8 @@ public class ConfigSyncPacket {
         return new ConfigSyncPacket(
                 CratBatConfig.targetPlayerName,
                 CratBatConfig.targetPlayerUUID,
-                CratBatConfig.targetPlayerTexture
+                CratBatConfig.targetPlayerTexture,
+                CratBatConfig.enableTestCrat
         );
     }
 
@@ -55,6 +59,7 @@ public class ConfigSyncPacket {
         buf.writeUtf(targetPlayerName);
         buf.writeUtf(targetPlayerUUID);
         buf.writeUtf(targetPlayerTexture);
+        buf.writeBoolean(enableTestCrat);
     }
 
     /**
@@ -67,7 +72,8 @@ public class ConfigSyncPacket {
         String name = buf.readUtf();
         String uuid = buf.readUtf();
         String texture = buf.readUtf();
-        return new ConfigSyncPacket(name, uuid, texture);
+        boolean testCrat = buf.readBoolean();
+        return new ConfigSyncPacket(name, uuid, texture, testCrat);
     }
 
     /**
@@ -78,10 +84,10 @@ public class ConfigSyncPacket {
      */
     public static void handle(ConfigSyncPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            LOGGER.debug("Received config sync from server: targetPlayer={}, uuid={}, hasTexture={}",
-                    packet.targetPlayerName, packet.targetPlayerUUID, !packet.targetPlayerTexture.isEmpty());
+            LOGGER.debug("Received config sync from server: targetPlayer={}, uuid={}, hasTexture={}, enableTestCrat={}",
+                    packet.targetPlayerName, packet.targetPlayerUUID, !packet.targetPlayerTexture.isEmpty(), packet.enableTestCrat);
 
-            CratBatConfig.applyServerConfig(packet.targetPlayerName, packet.targetPlayerUUID, packet.targetPlayerTexture);
+            CratBatConfig.applyServerConfig(packet.targetPlayerName, packet.targetPlayerUUID, packet.targetPlayerTexture, packet.enableTestCrat);
         });
         ctx.get().setPacketHandled(true);
     }
@@ -96,5 +102,9 @@ public class ConfigSyncPacket {
 
     public String getTargetPlayerTexture() {
         return targetPlayerTexture;
+    }
+
+    public boolean isEnableTestCrat() {
+        return enableTestCrat;
     }
 }

@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import xyz.nineworlds.cratbat.CratBatConfig;
+import xyz.nineworlds.cratbat.entity.TestCratEntity;
 
 public class CrankCrankDollItem extends Item {
     public CrankCrankDollItem(Properties properties) {
@@ -23,17 +24,22 @@ public class CrankCrankDollItem extends Item {
             // Check if the target player matches the configured name
             if (CratBatConfig.getTargetPlayerName().equals(targetName)) {
                 if (!player.level().isClientSide) {
-                    // Create and drop the Crank Skull
+                    // Create the Crank Skull and add to player inventory
                     ItemStack crankSkull = CrankSkullItem.createCrankSkull();
-                    targetPlayer.drop(crankSkull, false);
+                    if (!player.getInventory().add(crankSkull)) {
+                        // If inventory is full, drop it
+                        player.drop(crankSkull, false);
+                    }
 
                     // Consume the CrankCrank Doll
-                    stack.shrink(1);
+                    if (!player.getAbilities().instabuild) {
+                        stack.shrink(1);
+                    }
 
                     // Send ominous message only to the user
                     player.sendSystemMessage(Component.literal("The doll's eyes glow with dark energy... A skull materializes."));
                 }
-                return InteractionResult.SUCCESS;
+                return InteractionResult.sidedSuccess(player.level().isClientSide);
             } else {
                 // Wrong target player
                 if (!player.level().isClientSide) {
@@ -41,6 +47,27 @@ public class CrankCrankDollItem extends Item {
                 }
                 return InteractionResult.FAIL;
             }
+        }
+
+        // Also work on TestCrat entities for testing purposes
+        if (target instanceof TestCratEntity) {
+            if (!player.level().isClientSide) {
+                // Create the Crank Skull and add to player inventory
+                ItemStack crankSkull = CrankSkullItem.createCrankSkull();
+                if (!player.getInventory().add(crankSkull)) {
+                    // If inventory is full, drop it
+                    player.drop(crankSkull, false);
+                }
+
+                // Consume the CrankCrank Doll
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+
+                // Send ominous message only to the user
+                player.sendSystemMessage(Component.literal("The doll's eyes glow with dark energy... A skull materializes from the TestCrat."));
+            }
+            return InteractionResult.sidedSuccess(player.level().isClientSide);
         }
 
         return InteractionResult.PASS;

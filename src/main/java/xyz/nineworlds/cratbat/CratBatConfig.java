@@ -3,6 +3,7 @@ package xyz.nineworlds.cratbat;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import org.slf4j.Logger;
@@ -29,17 +30,24 @@ public class CratBatConfig {
             .comment("Texture URL for the target player's skin (used for Crank Skull)")
             .define("targetPlayerTexture", "");
 
+    private static final ForgeConfigSpec.BooleanValue ENABLE_TEST_CRAT = BUILDER
+            .comment("Enable the TestCrat entity and spawner item for testing the CratBat in singleplayer.",
+                     "Requires a game restart to take effect.")
+            .define("enableTestCrat", false);
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     // Local config values (from file)
     public static String targetPlayerName;
     public static String targetPlayerUUID;
     public static String targetPlayerTexture;
+    public static boolean enableTestCrat;
 
     // Server override values
     private static String serverTargetPlayerName;
     private static String serverTargetPlayerUUID;
     private static String serverTargetPlayerTexture;
+    private static boolean serverEnableTestCrat;
     private static boolean hasServerConfig = false;
 
     @SubscribeEvent
@@ -47,7 +55,29 @@ public class CratBatConfig {
         targetPlayerName = TARGET_PLAYER_NAME.get();
         targetPlayerUUID = TARGET_PLAYER_UUID.get();
         targetPlayerTexture = TARGET_PLAYER_TEXTURE.get();
-        LOGGER.debug("CratBat config loaded: targetPlayer={}, uuid={}", targetPlayerName, targetPlayerUUID);
+        enableTestCrat = ENABLE_TEST_CRAT.get();
+        LOGGER.debug("CratBat config loaded: targetPlayer={}, uuid={}, enableTestCrat={}", targetPlayerName, targetPlayerUUID, enableTestCrat);
+    }
+
+    /**
+     * Checks if the TestCrat entity should be enabled.
+     * Prefers server config if available (for runtime checks like JEI visibility).
+     * Falls back to cached local config value.
+     *
+     * @return true if TestCrat entity and spawner should be enabled
+     */
+    public static boolean isTestCratEnabled() {
+        return hasServerConfig ? serverEnableTestCrat : enableTestCrat;
+    }
+
+    /**
+     * Checks if TestCrat is enabled by reading directly from the config spec.
+     * Used during mod initialization when cached values may not be set yet.
+     *
+     * @return true if TestCrat entity and spawner should be registered
+     */
+    public static boolean isTestCratEnabledFromSpec() {
+        return ENABLE_TEST_CRAT.get();
     }
 
     /**
@@ -90,17 +120,20 @@ public class CratBatConfig {
      * Applies server configuration received from a multiplayer server.
      * These values will override local config until cleared.
      *
-     * @param name    The target player name from the server
-     * @param uuid    The target player UUID from the server
-     * @param texture The target player texture URL from the server
+     * @param name           The target player name from the server
+     * @param uuid           The target player UUID from the server
+     * @param texture        The target player texture URL from the server
+     * @param enableTestCrat Whether the TestCrat entity is enabled on the server
      */
-    public static void applyServerConfig(String name, String uuid, String texture) {
+    public static void applyServerConfig(String name, String uuid, String texture, boolean enableTestCrat) {
         serverTargetPlayerName = name;
         serverTargetPlayerUUID = uuid;
         serverTargetPlayerTexture = texture;
+        serverEnableTestCrat = enableTestCrat;
         hasServerConfig = true;
-        LOGGER.info("Applied server config: targetPlayer={}, uuid={}, hasTexture={}",
-                name, uuid, texture != null && !texture.isEmpty());
+        LOGGER.info("Applied server config: targetPlayer={}, uuid={}, hasTexture={}, enableTestCrat={}",
+                name, uuid, texture != null && !texture.isEmpty(), enableTestCrat);
+        updateJeiVisibility();
     }
 
     /**
@@ -111,8 +144,10 @@ public class CratBatConfig {
         serverTargetPlayerName = null;
         serverTargetPlayerUUID = null;
         serverTargetPlayerTexture = null;
+        serverEnableTestCrat = false;
         hasServerConfig = false;
         LOGGER.info("Cleared server config, reverting to local config");
+        updateJeiVisibility();
     }
 
     /**
@@ -132,5 +167,19 @@ public class CratBatConfig {
         targetPlayerUUID = uuid;
         targetPlayerTexture = texture;
         LOGGER.info("Updated local config: targetPlayer={}, uuid={}", name, uuid);
+    }
+
+    /**
+     * Safely updates JEI visibility for the TestCrat spawner.
+     * Only calls JEI if the mod is loaded.
+     */
+    private static void updateJeiVisibility() {
+        try {
+            if (ModList.get() != null && ModList.get().isLoaded("jei")) {
+                xyz.nineworlds.cratbat.integration.jei.CratBatJEIPlugin.updateTestCratVisibility();
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Failed to update JEI visibility: {}", e.getMessage());
+        }
     }
 }

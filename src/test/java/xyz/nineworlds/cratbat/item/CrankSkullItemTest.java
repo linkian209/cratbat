@@ -218,7 +218,7 @@ class CrankSkullItemTest {
             String serverUuid = "11111111-1111-1111-1111-111111111111";
             String serverTexture = "http://server-texture.png";
 
-            CratBatConfig.applyServerConfig(serverName, serverUuid, serverTexture);
+            CratBatConfig.applyServerConfig(serverName, serverUuid, serverTexture, false);
 
             assertEquals(serverName, CratBatConfig.getTargetPlayerName());
             assertEquals(serverUuid, CratBatConfig.getTargetPlayerUUID());
@@ -237,7 +237,7 @@ class CrankSkullItemTest {
             assertEquals(TEST_PLAYER_NAME, localName);
 
             // Server config
-            CratBatConfig.applyServerConfig("ServerCrat", "22222222-2222-2222-2222-222222222222", "http://server.png");
+            CratBatConfig.applyServerConfig("ServerCrat", "22222222-2222-2222-2222-222222222222", "http://server.png", false);
             String serverName = CratBatConfig.getTargetPlayerName();
             assertEquals("ServerCrat", serverName);
         }
